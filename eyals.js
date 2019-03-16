@@ -14,13 +14,13 @@ function go () {
 
     const expectedMinutes = times.length * 9 * 60;
     const actualMinutes = minutes.reduce(function (sum, num) { return sum + num }, 0);
-    const asd = actualMinutes - expectedMinutes;
-    const hoursDifference = Math.abs(Math.floor(asd / 60));
-    const minutesDifference = Math.abs(asd % 60);
+    const diff = actualMinutes - expectedMinutes;
+    const hoursDifference = Math.abs(Math.floor(diff / 60));
+    const minutesDifference = Math.abs(diff % 60);
     const hoursDifferenceString = hoursDifference < 10 ? ('0' + hoursDifference) : hoursDifference;
     const minutesDifferenceString = minutesDifference < 10 ? ('0' + minutesDifference) : minutesDifference;
     
-    if (asd > 0) {
+    if (diff > 0) {
         console.log('%cYou are ahead by ' + hoursDifferenceString + ':' + minutesDifferenceString, 'background: green');
     }
     else {
