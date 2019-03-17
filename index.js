@@ -12,7 +12,7 @@
     var table = document.querySelectorAll('table table')[4];
     var allRows = Array.from(table.querySelectorAll('tr'));
     var firstTitleRow = allRows[0];
-    var SecondTitleRow = allRows[1];
+    var thirdTitleRow = allRows[2];
     var dataRows = allRows.slice(3);
     
     // Find the target column index ('Total Hours')
@@ -22,13 +22,24 @@
 
     // Additional column offset
     // -1-     -2-     -3-
-    // in|out  in|out  in|out
-    totalHoursColumnIndex += SecondTitleRow.children.length * 2;
-    
-    var totalMinutesDiff = Array.from(dataRows).map(function (day, i) {
-        var dailyTotal = day.querySelector('td:nth-child('+ totalHoursColumnIndex +')').textContent.trim();
+    // in|out  in|out  in|out  <<-------
+    totalHoursColumnIndex += thirdTitleRow.children.length;
 
-        if (!dailyTotal || dailyTotal.startsWith("Missing")) return null;
+    var title = createNewTitle();
+    
+    firstTitleRow.appendChild(title);
+    
+    var totalMinutesDiff = Array.from(dataRows).map(function (dayRow, i) {
+        var dailyTotalCell = dayRow.querySelector('td:nth-child('+ totalHoursColumnIndex +')');
+        var dailyTotal = dailyTotalCell.textContent.trim();
+
+        if (!dailyTotal || dailyTotal.startsWith("Missing")) {
+            var cell = createNewCell();
+            
+            dayRow.appendChild(cell);
+
+            return null;
+        } 
   
         var actualTime = dailyTotal.split(':').map(function (x) {
             return parseInt(x, 10)
@@ -37,7 +48,14 @@
         var actualMinutes = actualTime[1];
         var totalMinutesToday = (actualHours * 60) + actualMinutes;
 
-        return totalMinutesToday - EXPECTED_MINUTES_PER_DAY;
+        var timeDiff = totalMinutesToday - EXPECTED_MINUTES_PER_DAY;
+
+        // Add the time diff next to the daily total
+        var cell = createNewCell(timeDiff);
+
+        dayRow.appendChild(cell);
+
+        return timeDiff;
     })
     
     // remove nulls
@@ -56,16 +74,51 @@
         return;
     }
     
-    var sign = totalMinutesDiff < 0 ? 'Missing Time: -' : 'Extra Time: +';
+    var sign = totalMinutesDiff < 0 ? 'Missing Time:\n -' : 'Extra Time:\n +';
     var diffTime = totalMinutesDiff < 0 ? (totalMinutesDiff * -1) : totalMinutesDiff;
-    var hoursLeft = padWithZero(Math.floor(diffTime/60));
-    var minsLeft = padWithZero(diffTime % 60);
+    var hoursDiff = padWithZero(Math.floor(diffTime / 60));
+    var minsDiff = padWithZero(diffTime % 60);
 
-    alert(sign + hoursLeft + ':' + minsLeft);
+    alert(sign + hoursDiff + ':' + minsDiff);
 
     function padWithZero (num) {
         if (num < 10)
             return '0' + num;
         return String(num);        
+    }
+
+    function createNewTitle () {
+        // Reference: Original title
+        // <td align="center" valign="middle" bgcolor="#7ba849" rowspan="3"><font size="2" face="Arial" color="white">Edit</font></td>
+        var title = document.createElement('td');
+        
+        title.setAttribute('align', 'center');
+        title.setAttribute('valign', 'middle');
+        title.setAttribute('bgcolor', '#7ba849');
+        title.setAttribute('rowspan', '3');
+        title.innerHTML = 'Time Diff';
+
+        return title;
+    }
+
+    function createNewCell (timeDiff) {
+        // Reference: Original cell
+        // <td bgcolor="#e0e0e0"><font size="2" face="Arial">&nbsp;9:08</font></td>
+        var cell = document.createElement('td');
+        
+        cell.setAttribute('bgcolor', '#e0e0e0');
+
+        if (timeDiff == null) return cell;
+
+        /**
+         * Casts the diff number into a string.
+         * Adds '+' sign for positive numbers.
+         * Minus sign is built in.
+         */
+        var timeDiffStr = timeDiff > 0 ? '+' + timeDiff: timeDiff;
+
+        cell.innerHTML = ' &nbsp (' + timeDiffStr + ')';
+
+        return cell;
     }
 })();
