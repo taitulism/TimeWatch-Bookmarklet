@@ -84,13 +84,67 @@
         return;
     }
     
-    var sign = totalMinutesDiff < 0 ? 'Missing Time:\n -' : 'Extra Time:\n +';
+    var titleText = totalMinutesDiff < 0 ? 'Missing Time' : 'Extra Time';
+    var sign = totalMinutesDiff < 0 ? '-' : '+';
     var diffTime = totalMinutesDiff < 0 ? (totalMinutesDiff * -1) : totalMinutesDiff;
     var hoursDiff = padWithZero(Math.floor(diffTime / 60));
     var minsDiff = padWithZero(diffTime % 60);
-    var credit = '\n\n\nhttps://github.com/taitulism/TimeWatch-Bookmarklet';
+    var link = 'https://github.com/taitulism/TimeWatch-Bookmarklet';
+    var creditLink = '<a href="'+link+'" style="color:white;">'+link+'</a>';
     
-    alert(sign + hoursDiff + ':' + minsDiff + credit);
+    var div = document.createElement('div');
+    var header = document.createElement('div');
+    var body = document.createElement('div');
+    var footer = document.createElement('div');
+
+    header.innerHTML = titleText;
+    body.innerHTML = sign + hoursDiff + ':' + minsDiff;
+    footer.innerHTML = creditLink;
+
+    header.style.backgroundColor = '#5b921d';
+    header.style.color = '#e4d9d9';
+    
+    setStyle(header, {
+        backgroundColor: (sign === '+') ? '#5b921d' : 'red',
+        color: 'white',
+        textAlign: 'center',
+        padding: '1em',
+    });
+
+    setStyle(body, {
+        textAlign: 'center',
+        fontSize: '140%',
+    });
+
+    setStyle(footer, {
+        fontSize: '85%',
+        color: 'white',
+    });
+
+    div.appendChild(header);
+    div.appendChild(body);
+    div.appendChild(footer);
+
+    setStyle(div, {
+        width: '400px',
+        height: '200px',
+        position: 'absolute',
+        top: '100px',
+        left: '38%',
+        backgroundColor: '#403434',
+        color: '#e4d9d9',
+        fontFamily: 'arial',
+        padding: '1em 3em',
+        borderRadius: '10px',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'space-around',
+    });
+
+    document.body.appendChild(div);
+
+
+    // alert(sign + hoursDiff + ':' + minsDiff + credit);
 
     // --------------------------------------------------------------
 
@@ -133,5 +187,11 @@
         cell.innerHTML = ' &nbsp (' + timeDiffStr + ')';
 
         return cell;
+    }
+
+    function setStyle (elm, style) {
+        for (var key in style) {
+            elm.style[key] = style[key];
+        }
     }
 })();
