@@ -4,7 +4,6 @@ var EXPECTED_HOURS_PER_DAY = 9;
 // Redirect from anywhere (the bookmarklet is also a regular bookmark)
 if (window.location.hostname !== 'checkin.timewatch.co.il') {
     window.location.href = 'https://checkin.timewatch.co.il';
-    return;
 }
 
 var EXPECTED_MINUTES_PER_DAY = EXPECTED_HOURS_PER_DAY * 60;
@@ -24,18 +23,27 @@ var totalHoursColumnIndex = Array.from(firstTitleRow.children).findIndex(functio
 // in|out  in|out  in|out  <<-------
 totalHoursColumnIndex += thirdTitleRow.children.length;
 
-var title = createNewTitle();
+var TITLE_TEXT = 'Time Diff';
 
-firstTitleRow.appendChild(title);
+var isLoaded = firstTitleRow.lastChild.textContent === TITLE_TEXT;
+
+if (!isLoaded) {
+    var title = createNewTitle(TITLE_TEXT);
+    
+    firstTitleRow.appendChild(title);
+}
+
 
 var totalMinutesDiff = Array.from(dataRows).map(function (dayRow, i) {
     var dailyTotalCell = dayRow.querySelector('td:nth-child('+ totalHoursColumnIndex +')');
     var dailyTotal = dailyTotalCell.textContent.trim();
 
     if (!dailyTotal || dailyTotal.startsWith("Missing")) {
-        var cell = createNewCell();
-        
-        dayRow.appendChild(cell);
+        if (!isLoaded) {
+            var cell = createNewCell();
+            
+            dayRow.appendChild(cell);
+        }
 
         return null;
     } 
@@ -50,9 +58,11 @@ var totalMinutesDiff = Array.from(dataRows).map(function (dayRow, i) {
     var timeDiff = totalMinutesToday - EXPECTED_MINUTES_PER_DAY;
 
     // Add the time diff next to the daily total
-    var cell = createNewCell(timeDiff);
-
-    dayRow.appendChild(cell);
+    if (!isLoaded) {
+        var cell = createNewCell(timeDiff);
+    
+        dayRow.appendChild(cell);
+    }
 
     return timeDiff;
 })
@@ -70,24 +80,24 @@ var totalMinutesDiff = Array.from(dataRows).map(function (dayRow, i) {
 // --------------------------------------------------------------
 if (totalMinutesDiff === 0) {
     alert('No Time Diff! :)' + credit);
-    return;
 }
-
-var sign = totalMinutesDiff < 0 ? 'Missing Time:\n -' : 'Extra Time:\n +';
-var diffTime = totalMinutesDiff < 0 ? (totalMinutesDiff * -1) : totalMinutesDiff;
-var hoursDiff = padWithZero(Math.floor(diffTime / 60));
-var minsDiff = padWithZero(diffTime % 60);
-var credit = '\n\n\nhttps://github.com/taitulism/TimeWatch-Bookmarklet';
-
-alert(sign + hoursDiff + ':' + minsDiff + credit);
-
+else {
+    var sign = totalMinutesDiff < 0 ? 'Missing Time:\n -' : 'Extra Time:\n +';
+    var diffTime = totalMinutesDiff < 0 ? (totalMinutesDiff * -1) : totalMinutesDiff;
+    var hoursDiff = padWithZero(Math.floor(diffTime / 60));
+    var minsDiff = padWithZero(diffTime % 60);
+    var credit = '\n\n\nhttps://github.com/taitulism/TimeWatch-Bookmarklet';
+    
+    alert(sign + hoursDiff + ':' + minsDiff + credit);
+}
+    
 function padWithZero (num) {
     if (num < 10)
         return '0' + num;
     return String(num);        
 }
 
-function createNewTitle () {
+function createNewTitle (titleText) {
     // Reference: Original title
     // <td align="center" valign="middle" bgcolor="#7ba849" rowspan="3"><font size="2" face="Arial" color="white">Edit</font></td>
     var title = document.createElement('td');
@@ -96,7 +106,7 @@ function createNewTitle () {
     title.setAttribute('valign', 'middle');
     title.setAttribute('bgcolor', '#7ba849');
     title.setAttribute('rowspan', '3');
-    title.innerHTML = 'Time Diff';
+    title.innerHTML = titleText;
 
     return title;
 }
