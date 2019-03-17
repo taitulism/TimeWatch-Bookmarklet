@@ -91,7 +91,8 @@
     var minsDiff = padWithZero(diffTime % 60);
     var link = 'https://github.com/taitulism/TimeWatch-Bookmarklet';
     var creditLink = '<a href="'+link+'" style="color:white;">'+link+'</a>';
-    
+
+    // Create Popup
     var div = document.createElement('div');
     var header = document.createElement('div');
     var body = document.createElement('div');
@@ -121,10 +122,6 @@
         color: 'white',
     });
 
-    div.appendChild(header);
-    div.appendChild(body);
-    div.appendChild(footer);
-
     setStyle(div, {
         width: '400px',
         height: '200px',
@@ -139,14 +136,22 @@
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-around',
+        cursor: 'pointer',
     });
 
+    div.appendChild(header);
+    div.appendChild(body);
+    div.appendChild(footer);
     document.body.appendChild(div);
 
-
-    // alert(sign + hoursDiff + ':' + minsDiff + credit);
+    div.addEventListener('click', removeDiv);
 
     // --------------------------------------------------------------
+
+    function removeDiv() {
+        div.removeEventListener('click', removeDiv);
+        div.parentNode.removeChild(div);
+    }
 
     function padWithZero (num) {
         if (num < 10)
