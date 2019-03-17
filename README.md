@@ -26,6 +26,8 @@ This script works only in the "Update punch data" page.
 
 ![TimeWatch.co.il's "update punch data" page](https://github.com/taitulism/TimeWatch-Bookmarklet/raw/develop/time-watch.png "TimeWatch.co.il's 'update punch data' page")
 
+>For ease of developing an extra column is added with the daily time diff.
+
 
 
 Creating you own bookmarklets?
