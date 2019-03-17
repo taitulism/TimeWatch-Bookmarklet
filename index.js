@@ -70,7 +70,7 @@
 
     // --------------------------------------------------------------
     if (totalMinutesDiff === 0) {
-        alert('No Time Diff! :)');
+        alert('No Time Diff! :)' + credit);
         return;
     }
     
@@ -78,8 +78,9 @@
     var diffTime = totalMinutesDiff < 0 ? (totalMinutesDiff * -1) : totalMinutesDiff;
     var hoursDiff = padWithZero(Math.floor(diffTime / 60));
     var minsDiff = padWithZero(diffTime % 60);
+    var credit = '\n\n\nhttps://github.com/taitulism/TimeWatch-Bookmarklet';
 
-    alert(sign + hoursDiff + ':' + minsDiff);
+    alert(sign + hoursDiff + ':' + minsDiff + credit);
 
     function padWithZero (num) {
         if (num < 10)
