@@ -51,20 +51,17 @@
     }, 0);
 
     // --------------------------------------------------------------
+    if (totalMinutesDiff === 0) {
+        alert('No Time Diff! :)');
+        return;
+    }
     
-    var sign = totalMinutesDiff < 0 ? '-' : '+';
+    var sign = totalMinutesDiff < 0 ? 'Missing Time: -' : 'Extra Time: +';
     var diffTime = totalMinutesDiff < 0 ? (totalMinutesDiff * -1) : totalMinutesDiff;
-    var remain = diffTime % 60;
+    var hoursLeft = padWithZero(Math.floor(diffTime/60));
+    var minsLeft = padWithZero(diffTime % 60);
 
-    if (!remain) {
-        console.log(diffTime / 60 + ':00')
-    }
-    else {
-        var hoursLeft = padWithZero(Math.floor(diffTime/60));
-        var minsLeft = padWithZero(diffTime % 60);
-
-        alert(sign + ' ' + hoursLeft + ':' + minsLeft);
-    }
+    alert(sign + hoursLeft + ':' + minsLeft);
 
     function padWithZero (num) {
         if (num < 10)
