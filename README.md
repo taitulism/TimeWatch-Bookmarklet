@@ -11,7 +11,7 @@ It's like a regular browser bookmark (a favorite link) but instead of a website 
 --------------
 1. Create a new Bookmark (`ctrl+D`).  
     *(You can bookmark this page for example and then edit it)*
-2. Edit the new bookmark (right click) and in the URL field put the contents of [`bookmarklet.txt`](https://raw.githubusercontent.com/taitulism/TimeWatch-Bookmarklet/develop/bookmarklet.txt).
+2. Edit the new bookmark (right click) and in the URL field put the contents of [`bookmarklet.txt`](https://raw.githubusercontent.com/taitulism/TimeWatch-Bookmarklet/master/bookmarklet.txt).
 
 >"Title" could be anything (e.g. "**TimeWatch**")
 
@@ -24,7 +24,7 @@ Clicking the bookmarklet on any other website will redirect you to: checkin.time
 
 This script works only in the "Update punch data" page.
 
-![TimeWatch.co.il's "update punch data" page](https://github.com/taitulism/TimeWatch-Bookmarklet/raw/develop/time-watch.png "TimeWatch.co.il's 'update punch data' page")
+![TimeWatch.co.il's "update punch data" page](https://github.com/taitulism/TimeWatch-Bookmarklet/raw/master/time-watch.png "TimeWatch.co.il's 'update punch data' page")
 
 >For ease of developing an extra column is added with the daily time diff.
 
