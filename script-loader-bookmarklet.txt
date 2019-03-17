@@ -1,0 +1,1 @@
+javascript:void%20function(){var%20a=document.createElement(%22script%22);a.src=%22https://cdn.jsdelivr.net/gh/taitulism/TimeWatch-Bookmarklet/index.js%22,a.type=%22text/javascript%22,document.body.appendChild(a)}();
