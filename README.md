@@ -30,5 +30,8 @@ This script works only in the "Update punch data" page.
 
 Creating you own bookmarklets?
 ------------------------------
-I recommend this tool: [https://chriszarate.github.io/bookmarkleter](https://chriszarate.github.io/bookmarkleter)  
-*(It doesn't like some of ES6 stuff. Use vars only, no arrow functions etc.)*
+I recommend this tool: [https://chriszarate.github.io/bookmarkleter](https://chriszarate.github.io/bookmarkleter)
+* It wraps your code with an [iife](https://developer.mozilla.org/en-US/docs/Glossary/IIFE)
+* It minifies your code
+* It escapes stuff (bookmarklet code should be URL compatible).
+* It doesn't like some of ES6 stuff. Use vars only, no arrow functions etc.
