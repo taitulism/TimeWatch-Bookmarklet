@@ -14,21 +14,28 @@
     var thirdTitleRow = allRows[2];
     var dataRows = allRows.slice(3);
 
+    // Additional column offset
+    // -1-     -2-     -3-
+    // in|out  in|out  in|out  <<-------
+    var addedCells = thirdTitleRow.children.length;
+
     // Find the 'Total Hours' column index
     var totalHoursColumnIndex = Array.from(firstTitleRow.children).findIndex(function (title) {
         return title.textContent === 'Total Hours';
-    });
-    
+    }) + addedCells;
+
+    // +1 because `nth-child` selector (comes later) is not zero based like elm.children
+
     // Find the 'Std Hours' column index
-    // +1 because `nth-child` selector is not zero based like elm.children
     var stdHoursColumnIndex = Array.from(firstTitleRow.children).findIndex(function (title) {
         return title.textContent === 'Std Hours';
     }) + 1; 
 
-    // Additional column offset
-    // -1-     -2-     -3-
-    // in|out  in|out  in|out  <<-------
-    totalHoursColumnIndex += thirdTitleRow.children.length;
+    // Find the 'Absence' column index
+    var absenceColumnSelector = getCellSelectorByTitle('Absence', true);
+  
+    // Find the 'Remarks' column index
+    var remarksColumnSelector = getCellSelectorByTitle('Remark', true);
 
     var TITLE_TEXT = 'Time Diff';
 
@@ -45,7 +52,17 @@
         var dailyTotalCell = dayRow.querySelector('td:nth-child('+ totalHoursColumnIndex +')');
         var dailyTotal = dailyTotalCell.textContent.trim();
 
-        if (!dailyTotal || dailyTotal.startsWith("Missing")) {
+        var absenceCell = dayRow.querySelector(absenceColumnSelector);
+        var remarksCell = dayRow.querySelector(remarksColumnSelector);
+        var absence = absenceCell.textContent.trim();
+        var remarks = remarksCell.textContent.trim();
+
+        var shouldCalculate = dailyTotal
+
+        debugger
+        var isHalfWorkDay = absence.includes('חצי') || remarks.includes('חצי');
+
+        if (!isHalfWorkDay && (!dailyTotal || dailyTotal.startsWith("Missing"))) {
             if (!isLoaded) {
                 var cell = createNewCell();
                 
@@ -57,12 +74,16 @@
         } 
 
         // Actual working hours
-        var totalMinutesToday = getTotalMinutes(dailyTotal)
+        var totalMinutesToday = getTotalMinutes(dailyTotal);
 
         // Expected working hours
         var expectedHoursTodayCell = dayRow.querySelector('td:nth-child('+ stdHoursColumnIndex +')');
         var expectedHoursToday = expectedHoursTodayCell.textContent.trim() || DEFAULT_EXPECTED_HOURS_PER_DAY;
-        var expectedMinutesToday = getTotalMinutes(expectedHoursToday)
+        var expectedMinutesToday = getTotalMinutes(expectedHoursToday);
+
+        if (isHalfWorkDay) {
+            expectedMinutesToday = expectedMinutesToday / 2;
+        }
         
         // Diff
         var timeDiff = totalMinutesToday - expectedMinutesToday;
@@ -221,5 +242,15 @@
         var totalMinutes = (hours * 60) + minutes;
 
         return totalMinutes;
+    }
+
+    function getCellSelectorByTitle (targetTitle, addPunchInCells = false) {
+        var columnIndex = Array.from(firstTitleRow.children).findIndex(function (title) {
+            return title.textContent === targetTitle;
+        }) + 1;
+
+        return addPunchInCells
+            ? 'td:nth-child('+ (columnIndex + addedCells - 1) + ')'
+            : 'td:nth-child('+ columnIndex +')';
     }
 })();
