@@ -9,25 +9,36 @@
     var DEFAULT_EXPECTED_HOURS_PER_DAY = '9:00';
 
     var table = document.querySelectorAll('table table')[4];
-    var allRows = Array.from(table.querySelectorAll('tr'));
-    var firstTitleRow = allRows[0];
-    var thirdTitleRow = allRows[2];
-    var dataRows = allRows.slice(3);
+    var allTableRows = Array.from(table.querySelectorAll('tr')); // includes table headers
 
-    // Additional column offset
-    // -1-     -2-     -3-
-    // in|out  in|out  in|out  <<-------
-    var addedCells = thirdTitleRow.children.length;
+    // Headers (first three rows)
+    var firstHeader = allTableRows[0];
+    var thirdHeader = allTableRows[2];
+    
+    // Data Rows
+    var dataRows = allTableRows.slice(3);
+
+    /*
+        Note the column offset:
+        The 'Total Hours' column is 7th in the table's header but 12th on a day row (when 'Punch Data' has 3 in/out parts).
+        The 'Punch Data' column size is dynamic as employers could change the number of ins and outs.
+    
+        ┌────────────────────┐
+        │P u n c h   D a t a │ <<------- firstHeader 1 cell
+        │ -1-  │ -2-  │ -3-  │
+        │in|out│in|out│in|out│ <<------- thirdHeader 6 cells
+    */
+    var cellsOffset = thirdHeader.children.length;
 
     // Find the 'Total Hours' column index
-    var totalHoursColumnIndex = Array.from(firstTitleRow.children).findIndex(function (title) {
+    var totalHoursColumnIndex = Array.from(firstHeader.children).findIndex(function (title) {
         return title.textContent === 'Total Hours';
-    }) + addedCells;
+    }) + cellsOffset;
 
     // +1 because `nth-child` selector (comes later) is not zero based like elm.children
 
     // Find the 'Std Hours' column index
-    var stdHoursColumnIndex = Array.from(firstTitleRow.children).findIndex(function (title) {
+    var stdHoursColumnIndex = Array.from(firstHeader.children).findIndex(function (title) {
         return title.textContent === 'Std Hours';
     }) + 1; 
 
@@ -39,13 +50,15 @@
 
     var TITLE_TEXT = 'Time Diff';
 
-    var isLoaded = firstTitleRow.lastChild.textContent === TITLE_TEXT;
+    var isLoaded = firstHeader.lastChild.textContent === TITLE_TEXT;
 
     if (!isLoaded) {
         var title = createNewTitle(TITLE_TEXT);
         
-        firstTitleRow.appendChild(title);
+        firstHeader.appendChild(title);
     }
+
+    var rowObjects = dataRows
 
     // Iterate over data rows
     var totalMinutesDiff = Array.from(dataRows).map(function (dayRow, i) {
@@ -245,12 +258,12 @@
     }
 
     function getCellSelectorByTitle (targetTitle, addPunchInCells = false) {
-        var columnIndex = Array.from(firstTitleRow.children).findIndex(function (title) {
+        var columnIndex = Array.from(firstHeader.children).findIndex(function (title) {
             return title.textContent === targetTitle;
         }) + 1;
 
         return addPunchInCells
-            ? 'td:nth-child('+ (columnIndex + addedCells - 1) + ')'
+            ? 'td:nth-child('+ (columnIndex + cellsOffset - 1) + ')'
             : 'td:nth-child('+ columnIndex +')';
     }
 })();
