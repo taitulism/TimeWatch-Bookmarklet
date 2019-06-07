@@ -40,6 +40,7 @@
         firstTitleRow.appendChild(title);
     }
 
+    // Iterate over data rows
     var totalMinutesDiff = Array.from(dataRows).map(function (dayRow, i) {
         var dailyTotalCell = dayRow.querySelector('td:nth-child('+ totalHoursColumnIndex +')');
         var dailyTotal = dailyTotalCell.textContent.trim();
