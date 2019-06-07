@@ -1,6 +1,4 @@
 (function () {
-    var COLUMN_TITLE = 'Total Hours';
-    var EXPECTED_HOURS_PER_DAY = 9;
 
     // Redirect from anywhere (the bookmarklet is also a regular bookmark)
     if (window.location.hostname !== 'checkin.timewatch.co.il') {
@@ -8,17 +6,24 @@
         return;
     }
 
-    var EXPECTED_MINUTES_PER_DAY = EXPECTED_HOURS_PER_DAY * 60;
+    var DEFAULT_EXPECTED_HOURS_PER_DAY = '9:00';
+
     var table = document.querySelectorAll('table table')[4];
     var allRows = Array.from(table.querySelectorAll('tr'));
     var firstTitleRow = allRows[0];
     var thirdTitleRow = allRows[2];
     var dataRows = allRows.slice(3);
 
-    // Find the target column index ('Total Hours')
+    // Find the 'Total Hours' column index
     var totalHoursColumnIndex = Array.from(firstTitleRow.children).findIndex(function (title) {
-        return title.textContent === COLUMN_TITLE;
+        return title.textContent === 'Total Hours';
     });
+    
+    // Find the 'Std Hours' column index
+    // +1 because `nth-child` selector is not zero based like elm.children
+    var stdHoursColumnIndex = Array.from(firstTitleRow.children).findIndex(function (title) {
+        return title.textContent === 'Std Hours';
+    }) + 1; 
 
     // Additional column offset
     // -1-     -2-     -3-
@@ -46,17 +51,20 @@
                 dayRow.appendChild(cell);
             }
 
+            // not a work day
             return null;
         } 
 
-        var actualTime = dailyTotal.split(':').map(function (x) {
-            return parseInt(x, 10)
-        });
-        var actualHours = actualTime[0];
-        var actualMinutes = actualTime[1];
-        var totalMinutesToday = (actualHours * 60) + actualMinutes;
+        // Actual working hours
+        var totalMinutesToday = getTotalMinutes(dailyTotal)
 
-        var timeDiff = totalMinutesToday - EXPECTED_MINUTES_PER_DAY;
+        // Expected working hours
+        var expectedHoursTodayCell = dayRow.querySelector('td:nth-child('+ stdHoursColumnIndex +')');
+        var expectedHoursToday = expectedHoursTodayCell.textContent.trim() || DEFAULT_EXPECTED_HOURS_PER_DAY;
+        var expectedMinutesToday = getTotalMinutes(expectedHoursToday)
+        
+        // Diff
+        var timeDiff = totalMinutesToday - expectedMinutesToday;
 
         // Add the time diff next to the daily total
         if (!isLoaded) {
@@ -198,5 +206,19 @@
         for (var key in style) {
             elm.style[key] = style[key];
         }
+    }
+
+     // timeString example: '9:00'
+     function getTotalMinutes (timeString) {
+        var split = timeString.split(':').map(function (str) {
+            return parseInt(str, 10)
+        });
+
+        var hours = split[0];
+        var minutes = split[1];
+
+        var totalMinutes = (hours * 60) + minutes;
+
+        return totalMinutes;
     }
 })();
