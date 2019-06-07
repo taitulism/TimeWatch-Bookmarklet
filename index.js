@@ -51,7 +51,7 @@
                 dayRow.appendChild(cell);
             }
 
-            // not a work day
+            // not a work day or a future date
             return null;
         } 
 
