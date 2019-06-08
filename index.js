@@ -7,38 +7,55 @@
     }
 
     var DEFAULT_EXPECTED_HOURS_PER_DAY = '9:00';
+    var HALF = 'חצי';
+    var WORK = 'עבודה';
+    var REST = 'מנוחה';
+    var SPECIAL_DAY = 'day';
+    var SUNDAY = 'יום א\'';
+    var FRIDAY = 'Fri';
+    var SATURDAY = 'Sat';
+    var MISSING = 'Missing';
+    var SICKNESS = 'מחלה';
+    var DAY_OFF = 'חופש';
 
-    var table = document.querySelectorAll('table table')[4];
-    var allTableRows = Array.from(table.querySelectorAll('tr')); // includes table headers
+    var tableElm = document.querySelectorAll('table table')[4];
+    var allTableRows = Array.from(tableElm.querySelectorAll('tr')); // includes table headers
 
     // Headers (first three rows)
     var firstHeader = allTableRows[0];
     var thirdHeader = allTableRows[2];
+
+    var titles = Array.from(firstHeader.children);
     
     // Data Rows
     var dataRows = allTableRows.slice(3);
 
-    /*
-        Note the column offset:
+    /* Note the column offset:
         The 'Total Hours' column is 7th in the table's header but 12th on a day row (when 'Punch Data' has 3 in/out parts).
         The 'Punch Data' column size is dynamic as employers could change the number of ins and outs.
-    
+
         ┌────────────────────┐
         │P u n c h   D a t a │ <<------- firstHeader 1 cell
         │ -1-  │ -2-  │ -3-  │
         │in|out│in|out│in|out│ <<------- thirdHeader 6 cells
     */
-    var cellsOffset = thirdHeader.children.length;
+    var cellsOffset = thirdHeader.children.length - 1;
+
+    function getTitleIndex (targetTitle) {
+        titles.findIndex(function (title) {
+            return title.textContent === 'Total Hours';
+        }) + cellsOffset;
+    }
 
     // Find the 'Total Hours' column index
-    var totalHoursColumnIndex = Array.from(firstHeader.children).findIndex(function (title) {
+    var totalHoursColumnIndex = titles.findIndex(function (title) {
         return title.textContent === 'Total Hours';
     }) + cellsOffset;
 
     // +1 because `nth-child` selector (comes later) is not zero based like elm.children
 
     // Find the 'Std Hours' column index
-    var stdHoursColumnIndex = Array.from(firstHeader.children).findIndex(function (title) {
+    var stdHoursColumnIndex = titles.findIndex(function (title) {
         return title.textContent === 'Std Hours';
     }) + 1; 
 
@@ -58,7 +75,78 @@
         firstHeader.appendChild(title);
     }
 
-    var rowObjects = dataRows
+    var dayObjs = dataRows.map(function (row, i) {
+        var cells = Array.from(row.children);
+        var dayNameAndDate = parseDate(getContent(cells[0])); // Column: 'Date'
+        var dayName = dayNameAndDate[0];
+        var dateObj = dayNameAndDate[1];
+        
+        /* Normalize columns:
+            The column titles are misleading:
+            Under 'Day Name' you'll see: 'יום עבודה', 'יום מנוחה', 'יום א' and more.
+            Under 'Day Type' you'll see: Sun, Mon, Tue... but also 'Holiday', 'Holiday Eve' and more.
+         */
+
+        // originally:
+        var dayType = getContent(cells[1]); // Column: 'Day Type'
+        var dayName = getContent(cells[2]); // Column: 'Day Name'
+        // but it makes more sense to:
+        var title = dayType;
+        var type = dayName;
+
+        var rawStdHours = getContent(cells[3]); // Column: 'Std Hours'
+        var stdHours = rawStdHours || DEFAULT_EXPECTED_HOURS_PER_DAY;
+        var absence = getContent(cells[5 + cellsOffset]); // Column: 'Absence'
+        var remark = getContent(cells[6 + cellsOffset]); // Column: 'Remark'
+        var isHalfWorkDay = absence.includes(HALF) || remarks.includes(HALF);
+        var totalHours = getContent(cells[7 + cellsOffset]); // Column: 'Total Hours'
+        var isRestDay = type.includes(REST) && !rawStdHours;
+        var isHoliday = type.toLowerCase().includes(SPECIAL_DAY) || title.toLowerCase().includes(SPECIAL_DAY);
+        var hasSickness = absence.includes(SICKNESS) || remarks.includes(SICKNESS);
+        var hasDayOff = absence.includes(DAY_OFF) || remarks.includes(DAY_OFF);
+        var isHalfSick = hasSickness && isHalfWorkDay;
+        var isHalfDayOff = hasDayOff && isHalfWorkDay;
+        var isMissing = totalHours.toLowerCase().includes(MISSING);
+
+        function isWorkDay (day) {
+            if (isRestDay || isHoliday) return false;
+            if (day.name === FRIDAY || day.name === SATURDAY) return false;
+                
+            day.type === SUNDAY || day.type.includes(WORK) && day.rawStdHours;
+            return 
+        }
+
+
+        return {
+            rowElm: row,
+            cells: Array.from(row.children),
+            name: dayName,
+            date: dateObj,
+            title: title,
+            type: type,
+            rawStdHours: rawStdHours,
+            stdHours: stdHours,
+            actualStdHours: stdHours || DEFAULT_EXPECTED_HOURS_PER_DAY,
+            absence: absence,
+            remark: remark,
+            expectedWorkingMinutes: getExpectedMinutesToday(stdHours, isHalfWorkDay),
+            actualWorkinMinutes: getTotalMinutes(totalHours),
+            isWorkDay: isWorkDay,
+            isRestDay: isRestDay,
+            isHalfWorkDay: isHalfWorkDay,
+        };
+    });
+
+    
+
+    dayObjs.forEach(function (day, i) {
+        // var isWorkDay = day.date.dayName === 'FRIDAY'  day.name.includes(WORK) || day.stdHours;
+        // var isHalfWorkDay = day.absence.includes(HALF) || day.remarks.includes(HALF);
+        
+        if (isFutureDate(day.date)) { /* blacken cells */ }
+
+
+    });
 
     // Iterate over data rows
     var totalMinutesDiff = Array.from(dataRows).map(function (dayRow, i) {
@@ -70,12 +158,12 @@
         var absence = absenceCell.textContent.trim();
         var remarks = remarksCell.textContent.trim();
 
-        var shouldCalculate = dailyTotal
+        // var shouldCalculate = dailyTotal
 
-        debugger
+        // debugger
         var isHalfWorkDay = absence.includes('חצי') || remarks.includes('חצי');
 
-        if (!isHalfWorkDay && (!dailyTotal || dailyTotal.startsWith("Missing"))) {
+        if (!isHalfWorkDay && (!dailyTotal || dailyTotal.startsWith(MISSING))) {
             if (!isLoaded) {
                 var cell = createNewCell();
                 
@@ -97,6 +185,8 @@
         if (isHalfWorkDay) {
             expectedMinutesToday = expectedMinutesToday / 2;
         }
+
+        
         
         // Diff
         var timeDiff = totalMinutesToday - expectedMinutesToday;
@@ -258,12 +348,51 @@
     }
 
     function getCellSelectorByTitle (targetTitle, addPunchInCells = false) {
-        var columnIndex = Array.from(firstHeader.children).findIndex(function (title) {
+        var columnIndex = titles.findIndex(function (title) {
             return title.textContent === targetTitle;
         }) + 1;
 
         return addPunchInCells
             ? 'td:nth-child('+ (columnIndex + cellsOffset - 1) + ')'
             : 'td:nth-child('+ columnIndex +')';
+    }
+
+    function getContent (cellElm) {
+        return cellElm.textContent.trim();
+    }
+
+    function parseDate (rawDate) {
+        // e.g. '31-10-2018 Wed'
+        var split = rawDate.split(' ');
+        var date = split[0];    // 31-10-2018
+        var dayName = split[1]; // Wed
+        var dateSplit = date.split('-');
+        var dateObj = {
+            dayNumber: parseInt(dateSplit[0], 10),
+            month: parseInt(dateSplit[1], 10),
+            year: parseInt(dateSplit[2], 10),
+        };        
+        
+        return [dayName, dateObj];
+    }
+
+    function isFutureDate (dateObj) {
+        var today = new Date();
+        
+        if (today.getFullYear() < dateObj.year) return true;
+        if (today.getMonth() < dateObj.month) return true;
+        if (today.getDate() < dateObj.dayNumber) return true;
+
+        return false;
+    }
+
+    function getExpectedMinutesToday (stdHours, isHalfWorkDay) {
+        var expectedMinutesToday = getTotalMinutes(stdHours);
+
+        if (isHalfWorkDay) {
+            expectedMinutesToday = expectedMinutesToday / 2;
+        }
+
+        return expectedMinutesToday;
     }
 })();
