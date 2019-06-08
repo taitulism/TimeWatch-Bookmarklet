@@ -18,7 +18,7 @@
     var SICKNESS = 'מחלה';
     var DAY_OFF = 'חופש';
 
-    var REST_BG_COLOR = '#a9a9a9';
+    var REST_BG_COLOR = '#bbb';
     var REST_FG_COLOR = '#544343';
     var FUTURE_BG_COLOR = '#bdbdbd';
     var FUTURE_FG_COLOR = '#796363';
@@ -48,36 +48,12 @@
     */
     var punchOffset = thirdHeader.children.length - 1;
 
-    function getTitleIndex (targetTitle) {
-        titles.findIndex(function (title) {
-            return title.textContent === 'Total Hours';
-        }) + punchOffset;
-    }
+    var CUSTOM_TITLE_TEXT = 'Time Diff';
 
-    // Find the 'Total Hours' column index
-    var totalHoursColumnIndex = titles.findIndex(function (title) {
-        return title.textContent === 'Total Hours';
-    }) + punchOffset;
-
-    // +1 because `nth-child` selector (comes later) is not zero based like elm.children
-
-    // Find the 'Std Hours' column index
-    var stdHoursColumnIndex = titles.findIndex(function (title) {
-        return title.textContent === 'Std Hours';
-    }) + 1; 
-
-    // Find the 'Absence' column index
-    var absenceColumnSelector = getCellSelectorByTitle('Absence', true);
-  
-    // Find the 'Remarks' column index
-    var remarksColumnSelector = getCellSelectorByTitle('Remark', true);
-
-    var TITLE_TEXT = 'Time Diff';
-
-    var isLoaded = firstHeader.lastChild.textContent === TITLE_TEXT;
+    var isLoaded = firstHeader.lastChild.textContent === CUSTOM_TITLE_TEXT;
 
     if (!isLoaded) {
-        var title = createNewTitle(TITLE_TEXT);
+        var title = createNewTitle(CUSTOM_TITLE_TEXT);
         
         firstHeader.appendChild(title);
     }
@@ -93,99 +69,48 @@
     var dayObjs = dataRows.map(collectRawData).map(parseRawData);
     var totalExpected = 0;
     var totalWork = 0;
+    var totalDiff = 0;
 
     
     dayObjs.forEach(function (day) {
-        if (day.isRestDay) colorizeRow(day, REST_BG_COLOR, REST_FG_COLOR);
-        else if (day.isFutureDate) colorizeRow(day, FUTURE_BG_COLOR, FUTURE_FG_COLOR);
+        var cell;
 
+        // Add custom column
+        if (!isLoaded) {
+            cell = createNewCell();
+            
+            day.rowElm.appendChild(cell);
+            day.rowCells.push(cell);
+        }
+
+        // Colorize rest & future days
+        if (day.isRestDay) {
+            colorizeRow(day, REST_BG_COLOR, REST_FG_COLOR);
+            return;
+        }
+        else if (day.isFutureDate) {
+            colorizeRow(day, FUTURE_BG_COLOR, FUTURE_FG_COLOR);
+            return;
+        }
+
+        // Calculate Diff in minutes
+        var dailyTimeDiff = day.actualWorkMinutes - day.expectedMinutes;
+        totalDiff += dailyTimeDiff;
+        totalExpected += day.expectedMinutes;
+        totalWork += day.actualWorkMinutes;
+
+        setCellValue(cell, dailyTimeDiff);
     });
     
-
-
-
-
-
-
-
-    // Iterate over data rows
-    var totalMinutesDiff = Array.from(dataRows).map(function (dayRow, i) {
-        var dailyTotalCell = dayRow.querySelector('td:nth-child('+ totalHoursColumnIndex +')');
-        var dailyTotal = dailyTotalCell.textContent.trim();
-
-        var absenceCell = dayRow.querySelector(absenceColumnSelector);
-        var remarksCell = dayRow.querySelector(remarksColumnSelector);
-        var absence = absenceCell.textContent.trim();
-        var remark = remarksCell.textContent.trim();
-
-        // var shouldCalculate = dailyTotal
-
-        // debugger
-        var isHalfWorkDay = absence.includes('חצי') || remark.includes('חצי');
-
-        if (!isHalfWorkDay && (!dailyTotal || dailyTotal.startsWith(MISSING))) {
-            if (!isLoaded) {
-                var cell = createNewCell();
-                
-                dayRow.appendChild(cell);
-            }
-
-            // not a work day or a future date
-            return null;
-        } 
-
-        // Actual working hours
-        var totalMinutesToday = getTotalMinutes(dailyTotal);
-
-        // Expected working hours
-        var expectedHoursTodayCell = dayRow.querySelector('td:nth-child('+ stdHoursColumnIndex +')');
-        var expectedHoursToday = expectedHoursTodayCell.textContent.trim() || DEFAULT_EXPECTED_HOURS_PER_DAY;
-        var expectedMinutesToday = getTotalMinutes(expectedHoursToday);
-
-        if (isHalfWorkDay) {
-            expectedMinutesToday = expectedMinutesToday / 2;
-        }
-
-        
-        
-        // Diff
-        var timeDiff = totalMinutesToday - expectedMinutesToday;
-
-        // Add the time diff next to the daily total
-        if (!isLoaded) {
-            var cell = createNewCell(timeDiff);
-        
-            dayRow.appendChild(cell);
-        }
-
-        return timeDiff;
-    })
-
-    // remove nulls
-    .filter(function (minutes) {
-        return typeof minutes === 'number';       
-    })
-
-    // Sum up total minutes
-    .reduce(function (minutesTotal, minutesToday) {
-        return minutesTotal + minutesToday;
-    }, 0);
-
-
-
-
-
-
-
     // --------------------------------------------------------------
-    if (totalMinutesDiff === 0) {
+    if (totalDiff === 0) {
         alert('No Time Diff! :)'/*  + credit */);
         return;
     }
     
-    var titleText = totalMinutesDiff < 0 ? 'Missing Time' : 'Extra Time';
-    var sign = totalMinutesDiff < 0 ? '-' : '+';
-    var diffTime = totalMinutesDiff < 0 ? (totalMinutesDiff * -1) : totalMinutesDiff;
+    var titleText = totalDiff < 0 ? 'Missing Time' : 'Extra Time';
+    var sign = totalDiff < 0 ? '-' : '+';
+    var diffTime = totalDiff < 0 ? (totalDiff * -1) : totalDiff;
     var hoursDiff = padWithZero(Math.floor(diffTime / 60));
     var minsDiff = padWithZero(diffTime % 60);
     var link = 'https://github.com/taitulism/TimeWatch-Bookmarklet';
@@ -273,24 +198,26 @@
     }
 
     function createNewCell (timeDiff) {
-        // Reference: Original cell
+        // For Reference: Original cell looks like:
         // <td bgcolor="#e0e0e0"><font size="2" face="Arial">&nbsp;9:08</font></td>
         var cell = document.createElement('td');
         
         cell.setAttribute('bgcolor', '#e0e0e0');
 
-        if (timeDiff == null) return cell;
-
+        return cell;
+    }
+    
+    function setCellValue (cell, value) {
         /**
          * Casts the diff number into a string.
          * Adds '+' sign for positive numbers.
          * Minus sign is built in.
          */
-        var timeDiffStr = timeDiff > 0 ? '+' + timeDiff: timeDiff;
-
-        cell.innerHTML = ' &nbsp (' + timeDiffStr + ')';
-
-        return cell;
+        var valueStr = value > 0 ? '+' + value: value;
+    
+        cell.innerHTML = ' &nbsp (' + valueStr + ')';
+    
+        return cell;        
     }
 
     function setStyle (elm, style) {
@@ -346,21 +273,13 @@
     
 
     function isFutureDate (dateObj) {
-        // debugger
         var date = new Date();
 
         date.setFullYear(dateObj.year);
         date.setMonth(dateObj.month - 1);
         date.setDate(dateObj.dayNumber - 1);
 
-        console.log(date.getTime() > TODAY.getTime());
-        return date.getTime() > TODAY.getTime()
-        
-        // if (TODAY.getFullYear() < dateObj.year) return true;
-        // if (TODAY.getMonth() < dateObj.month) return true;
-        // if (TODAY.getDate() < dateObj.dayNumber) return true;
-
-        // return false;
+        return date.getTime() > TODAY.getTime();
     }
 
     function getExpectedMinutesToday (stdHours, isHalfWorkDay) {
