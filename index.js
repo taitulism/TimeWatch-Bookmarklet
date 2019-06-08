@@ -93,8 +93,11 @@
             return;
         }
 
+        // sickness/vacation (whole day)
+        if ((day.hasSickness || day.hasDayOff) && !day.hasHalfDay) return;
+
         // Calculate Diff in minutes
-        var dailyTimeDiff = day.actualWorkMinutes - day.expectedMinutes;
+        var dailyTimeDiff = day.actualWorkMinutes ? day.actualWorkMinutes - day.expectedMinutes : 0;
         totalDiff += dailyTimeDiff;
         totalExpected += day.expectedMinutes;
         totalWork += day.actualWorkMinutes;
@@ -227,7 +230,7 @@
     }
 
      function getTotalMinutes (timeString) {
-        timeString = timeString || DEFAULT_EXPECTED_HOURS_PER_DAY;
+        if (!timeString) return 0;
 
         var split = timeString.split(':').map(function (str) {
             return parseInt(str, 10)
@@ -239,16 +242,6 @@
         var totalMinutes = (hours * 60) + minutes;
 
         return totalMinutes;
-    }
-
-    function getCellSelectorByTitle (targetTitle, addPunchInCells = false) {
-        var columnIndex = titles.findIndex(function (title) {
-            return title.textContent === targetTitle;
-        }) + 1;
-
-        return addPunchInCells
-            ? 'td:nth-child('+ (columnIndex + punchOffset - 1) + ')'
-            : 'td:nth-child('+ columnIndex +')';
     }
 
     function getContent (cellElm) {
@@ -282,14 +275,12 @@
         return date.getTime() > TODAY.getTime();
     }
 
-    function getExpectedMinutesToday (stdHours, isHalfWorkDay) {
-        var expectedMinutesToday = getTotalMinutes(stdHours);
+    function getExpectedMinutes (stdHours, isHalfDayOff) {
+        var expectedMinutes = getTotalMinutes(stdHours);
 
-        if (isHalfWorkDay) {
-            expectedMinutesToday = expectedMinutesToday / 2;
-        }
+        if (isHalfDayOff) return expectedMinutes / 2;
 
-        return expectedMinutesToday;
+        return expectedMinutes;
     }
 
     function colorizeRow (day, bgColor, fgColor) {
@@ -357,7 +348,7 @@
         day.isXday       = day.type.toLowerCase().includes(DAY) || day.title.toLowerCase().includes(DAY);
         day.isHalfSick   = hasHalfDay && hasSickness;
         day.isHalfDayOff = hasHalfDay && hasDayOff;
-        day.expectedMinutes   = getExpectedMinutesToday(stdHours, hasHalfDay);
+        day.expectedMinutes   = getExpectedMinutes(stdHours, hasHalfDay);
         day.actualWorkMinutes = getTotalMinutes(totalHours);
 
         return day;
