@@ -8,15 +8,22 @@
 
     var DEFAULT_EXPECTED_HOURS_PER_DAY = '9:00';
     var HALF = 'חצי';
-    var WORK = 'עבודה';
-    var REST = 'מנוחה';
-    var SPECIAL_DAY = 'day';
-    var SUNDAY = 'יום א\'';
+    var WORK_DAY = 'עבודה';
+    var REST_DAY = 'מנוחה';
+    var DAY = 'day';
+    var HEBREW_SUNDAY = 'יום א\'';
     var FRIDAY = 'Fri';
     var SATURDAY = 'Sat';
     var MISSING = 'Missing';
     var SICKNESS = 'מחלה';
     var DAY_OFF = 'חופש';
+
+    var REST_BG_COLOR = '#a9a9a9';
+    var REST_FG_COLOR = '#544343';
+    var FUTURE_BG_COLOR = '#bdbdbd';
+    var FUTURE_FG_COLOR = '#796363';
+
+    var TODAY = new Date();
 
     var tableElm = document.querySelectorAll('table table')[4];
     var allTableRows = Array.from(tableElm.querySelectorAll('tr')); // includes table headers
@@ -39,18 +46,18 @@
         │ -1-  │ -2-  │ -3-  │
         │in|out│in|out│in|out│ <<------- thirdHeader 6 cells
     */
-    var cellsOffset = thirdHeader.children.length - 1;
+    var punchOffset = thirdHeader.children.length - 1;
 
     function getTitleIndex (targetTitle) {
         titles.findIndex(function (title) {
             return title.textContent === 'Total Hours';
-        }) + cellsOffset;
+        }) + punchOffset;
     }
 
     // Find the 'Total Hours' column index
     var totalHoursColumnIndex = titles.findIndex(function (title) {
         return title.textContent === 'Total Hours';
-    }) + cellsOffset;
+    }) + punchOffset;
 
     // +1 because `nth-child` selector (comes later) is not zero based like elm.children
 
@@ -75,78 +82,31 @@
         firstHeader.appendChild(title);
     }
 
-    var dayObjs = dataRows.map(function (row, i) {
-        var cells = Array.from(row.children);
-        var dayNameAndDate = parseDate(getContent(cells[0])); // Column: 'Date'
-        var dayName = dayNameAndDate[0];
-        var dateObj = dayNameAndDate[1];
-        
-        /* Normalize columns:
-            The column titles are misleading:
-            Under 'Day Name' you'll see: 'יום עבודה', 'יום מנוחה', 'יום א' and more.
-            Under 'Day Type' you'll see: Sun, Mon, Tue... but also 'Holiday', 'Holiday Eve' and more.
-         */
+    function isWorkDay (day) {
+        if (day.isRestDay || day.isXday) return false;
+        if (day.name === FRIDAY || day.name === SATURDAY) return false;
+            
+        day.type === HEBREW_SUNDAY || day.type.includes(WORK_DAY) && day.rawStdHours;
+        return 
+    }
 
-        // originally:
-        var dayType = getContent(cells[1]); // Column: 'Day Type'
-        var dayName = getContent(cells[2]); // Column: 'Day Name'
-        // but it makes more sense to:
-        var title = dayType;
-        var type = dayName;
-
-        var rawStdHours = getContent(cells[3]); // Column: 'Std Hours'
-        var stdHours = rawStdHours || DEFAULT_EXPECTED_HOURS_PER_DAY;
-        var absence = getContent(cells[5 + cellsOffset]); // Column: 'Absence'
-        var remark = getContent(cells[6 + cellsOffset]); // Column: 'Remark'
-        var isHalfWorkDay = absence.includes(HALF) || remarks.includes(HALF);
-        var totalHours = getContent(cells[7 + cellsOffset]); // Column: 'Total Hours'
-        var isRestDay = type.includes(REST) && !rawStdHours;
-        var isHoliday = type.toLowerCase().includes(SPECIAL_DAY) || title.toLowerCase().includes(SPECIAL_DAY);
-        var hasSickness = absence.includes(SICKNESS) || remarks.includes(SICKNESS);
-        var hasDayOff = absence.includes(DAY_OFF) || remarks.includes(DAY_OFF);
-        var isHalfSick = hasSickness && isHalfWorkDay;
-        var isHalfDayOff = hasDayOff && isHalfWorkDay;
-        var isMissing = totalHours.toLowerCase().includes(MISSING);
-
-        function isWorkDay (day) {
-            if (isRestDay || isHoliday) return false;
-            if (day.name === FRIDAY || day.name === SATURDAY) return false;
-                
-            day.type === SUNDAY || day.type.includes(WORK) && day.rawStdHours;
-            return 
-        }
-
-
-        return {
-            rowElm: row,
-            cells: Array.from(row.children),
-            name: dayName,
-            date: dateObj,
-            title: title,
-            type: type,
-            rawStdHours: rawStdHours,
-            stdHours: stdHours,
-            actualStdHours: stdHours || DEFAULT_EXPECTED_HOURS_PER_DAY,
-            absence: absence,
-            remark: remark,
-            expectedWorkingMinutes: getExpectedMinutesToday(stdHours, isHalfWorkDay),
-            actualWorkinMinutes: getTotalMinutes(totalHours),
-            isWorkDay: isWorkDay,
-            isRestDay: isRestDay,
-            isHalfWorkDay: isHalfWorkDay,
-        };
-    });
+    var dayObjs = dataRows.map(collectRawData).map(parseRawData);
+    var totalExpected = 0;
+    var totalWork = 0;
 
     
-
-    dayObjs.forEach(function (day, i) {
-        // var isWorkDay = day.date.dayName === 'FRIDAY'  day.name.includes(WORK) || day.stdHours;
-        // var isHalfWorkDay = day.absence.includes(HALF) || day.remarks.includes(HALF);
-        
-        if (isFutureDate(day.date)) { /* blacken cells */ }
-
+    dayObjs.forEach(function (day) {
+        if (day.isRestDay) colorizeRow(day, REST_BG_COLOR, REST_FG_COLOR);
+        else if (day.isFutureDate) colorizeRow(day, FUTURE_BG_COLOR, FUTURE_FG_COLOR);
 
     });
+    
+
+
+
+
+
+
 
     // Iterate over data rows
     var totalMinutesDiff = Array.from(dataRows).map(function (dayRow, i) {
@@ -156,12 +116,12 @@
         var absenceCell = dayRow.querySelector(absenceColumnSelector);
         var remarksCell = dayRow.querySelector(remarksColumnSelector);
         var absence = absenceCell.textContent.trim();
-        var remarks = remarksCell.textContent.trim();
+        var remark = remarksCell.textContent.trim();
 
         // var shouldCalculate = dailyTotal
 
         // debugger
-        var isHalfWorkDay = absence.includes('חצי') || remarks.includes('חצי');
+        var isHalfWorkDay = absence.includes('חצי') || remark.includes('חצי');
 
         if (!isHalfWorkDay && (!dailyTotal || dailyTotal.startsWith(MISSING))) {
             if (!isLoaded) {
@@ -211,9 +171,15 @@
         return minutesTotal + minutesToday;
     }, 0);
 
+
+
+
+
+
+
     // --------------------------------------------------------------
     if (totalMinutesDiff === 0) {
-        alert('No Time Diff! :)' + credit);
+        alert('No Time Diff! :)'/*  + credit */);
         return;
     }
     
@@ -333,8 +299,9 @@
         }
     }
 
-     // timeString example: '9:00'
      function getTotalMinutes (timeString) {
+        timeString = timeString || DEFAULT_EXPECTED_HOURS_PER_DAY;
+
         var split = timeString.split(':').map(function (str) {
             return parseInt(str, 10)
         });
@@ -353,7 +320,7 @@
         }) + 1;
 
         return addPunchInCells
-            ? 'td:nth-child('+ (columnIndex + cellsOffset - 1) + ')'
+            ? 'td:nth-child('+ (columnIndex + punchOffset - 1) + ')'
             : 'td:nth-child('+ columnIndex +')';
     }
 
@@ -375,15 +342,25 @@
         
         return [dayName, dateObj];
     }
+    
+    
 
     function isFutureDate (dateObj) {
-        var today = new Date();
-        
-        if (today.getFullYear() < dateObj.year) return true;
-        if (today.getMonth() < dateObj.month) return true;
-        if (today.getDate() < dateObj.dayNumber) return true;
+        // debugger
+        var date = new Date();
 
-        return false;
+        date.setFullYear(dateObj.year);
+        date.setMonth(dateObj.month - 1);
+        date.setDate(dateObj.dayNumber - 1);
+
+        console.log(date.getTime() > TODAY.getTime());
+        return date.getTime() > TODAY.getTime()
+        
+        // if (TODAY.getFullYear() < dateObj.year) return true;
+        // if (TODAY.getMonth() < dateObj.month) return true;
+        // if (TODAY.getDate() < dateObj.dayNumber) return true;
+
+        // return false;
     }
 
     function getExpectedMinutesToday (stdHours, isHalfWorkDay) {
@@ -394,5 +371,76 @@
         }
 
         return expectedMinutesToday;
+    }
+
+    function colorizeRow (day, bgColor, fgColor) {
+        day.rowCells.forEach(function (cell) {
+            cell.style.backgroundColor = bgColor;
+            if (fgColor) cell.style.color = fgColor;
+        });
+    }
+
+    function collectRawData (rowElm) {
+        var rowCells = Array.from(rowElm.children);
+        var cellsData = rowCells.map(function (cell) {return getContent(cell)})
+
+        return {
+            rowElm: rowElm,
+            rowCells: rowCells,
+            cellsData: cellsData,
+            column: {
+                'Date': cellsData[0],
+                'DayType': cellsData[1],
+                'DayName': cellsData[2],
+                'StdHours': cellsData[3],
+                'Absence': cellsData[5 + punchOffset],
+                'Remark': cellsData[6 + punchOffset],
+                'TotalHours': cellsData[7 + punchOffset],
+            }
+        };
+    }
+
+    function parseRawData (rawRowObj) {
+        var day = rawRowObj;
+        var rawColumn = day.column;
+
+        var dayNameAndDate = parseDate(rawColumn.Date);
+        day.name = dayNameAndDate[0];
+        day.date = dayNameAndDate[1];
+        day.isFutureDate = isFutureDate(day.date);
+
+        /* Normalize columns:
+            The column titles are misleading:
+            Under 'Day Name' you'll see: 'יום עבודה', 'יום מנוחה', 'יום א' and more.
+            Under 'Day Type' you'll see: Sun, Mon, Tue... but also 'Holiday', 'Holiday Eve' and more.
+
+            It makes more sense to:
+        */
+        day.title = rawColumn.DayType;
+        day.type  = rawColumn.DayName;
+
+        var absence = rawColumn.Absence;
+        var remark = rawColumn.Remark;
+
+        var hasHalfDay  = absence.includes(HALF)     || remark.includes(HALF);
+        var hasSickness = absence.includes(SICKNESS) || remark.includes(SICKNESS);
+        var hasDayOff   = absence.includes(DAY_OFF)  || remark.includes(DAY_OFF);
+        
+        day.hasHalfDay = hasHalfDay;
+        day.hasSickness = hasSickness;
+        day.hasDayOff = hasDayOff;
+
+        var stdHours = rawColumn.StdHours;
+        var totalHours = rawColumn.TotalHours;
+
+        day.isRestDay    = day.type.includes(REST_DAY) && !stdHours;
+        day.isMissing    = totalHours.toLowerCase().includes(MISSING);
+        day.isXday       = day.type.toLowerCase().includes(DAY) || day.title.toLowerCase().includes(DAY);
+        day.isHalfSick   = hasHalfDay && hasSickness;
+        day.isHalfDayOff = hasHalfDay && hasDayOff;
+        day.expectedMinutes   = getExpectedMinutesToday(stdHours, hasHalfDay);
+        day.actualWorkMinutes = getTotalMinutes(totalHours);
+
+        return day;
     }
 })();
