@@ -16,14 +16,14 @@
 	var popup;
 
     var tableElm = doc.querySelectorAll('table table')[4];
-    var allTableRows = Array.from(tableElm.querySelectorAll('tr')); // includes table headers
+    var allTableRows = tableElm.querySelectorAll('tr'); // includes table headers
 
     // Headers (first three rows)
     var firstHeader = allTableRows[0];
-    var thirdHeader = allTableRows[2];
+	var thirdHeader = allTableRows[2];
 
-    // Data Rows
-    var dataRows = allTableRows.slice(3);
+	// Data Rows
+    var dataRows = Array.from(allTableRows).slice(3);
 
     /* Note the column offset:
         The 'Total Hours' column is 7th in the table's header but 12th on a day row (when 'Punch Data' has 3 in/out parts).
@@ -86,6 +86,7 @@
 			textAlign: 'right',
 			fontSize: '15px',
 			width: '70px',
+			fontWeight: 'bold',
 		});
 
 		day.rowElm.appendChild(cell);
@@ -132,7 +133,7 @@
 		// last cell
 		var cell = rowCells[rowCells.length - 1];
 
-		cell.style.color = value > 0 ? 'green' : value < 0 ? 'red' : 'black';
+		cell.style.color = value > 0 ? '#00bd00' : value < 0 ? '#ff4545' : 'black';
 		cell.innerHTML = value + ' &nbsp;';
 	}
 
@@ -268,6 +269,12 @@
 	function changeDOM (day) {
         if (isFirstRun) {
 			doc.body.style.fontFamily = 'arial';
+			tableElm.style.borderSpacing = '0';
+
+			// Align titles
+			Array.from(firstHeader.children).concat(Array.from(thirdHeader.children)).forEach(function (title){
+				title.setAttribute('align', 'left');
+			});
 
 			appendDiffCell(day);
 
