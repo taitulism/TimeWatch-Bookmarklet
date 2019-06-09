@@ -85,7 +85,6 @@
 		setStyle(cell, {
 			textAlign: 'right',
 			fontSize: '15px',
-			width: '70px',
 			fontWeight: 'bold',
 		});
 
