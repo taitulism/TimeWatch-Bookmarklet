@@ -12,10 +12,6 @@
     var MISSING = 'Missing';
     var SICKNESS = 'מחלה';
     var DAY_OFF = 'חופש';
-    var REST_BG_COLOR = '#cecece';
-    var REST_FG_COLOR = '#544343';
-    var FUTURE_BG_COLOR = '#bdbdbd';
-    var FUTURE_FG_COLOR = '#796363';
 	var today = new Date();
 	var popup;
 
@@ -69,17 +65,27 @@
 
 	function appendColumnTitle () {
 		var title = createNewTitle('Time Diff');
-        firstHeader.appendChild(title);
+
+		setStyle(title, {
+			color: 'white',
+			fontSize: '13px',
+		});
+
+		firstHeader.appendChild(title);
 	}
 
 	function appendDiffCell (day) {
-		// For Reference: Original cell looks like:
-        // <td bgcolor="#e0e0e0"><font size="2" face="Arial">&nbsp;9:08</font></td>
-        var cell = createElm('td');
+		// Data Cell Reference:
+		// <td bgcolor="#e6e6e6"><font size="2" face="Arial">&nbsp;9:28</font></td>
+		var cell = createElm('td');
+
+		// "Inherit" background color (copy from first sibling)
+		cell.setAttribute('bgcolor', day.rowCells[0].getAttribute('bgColor'));
 
 		setStyle(cell, {
-			backgroundColor: '#e0e0e0',
 			textAlign: 'right',
+			fontSize: '15px',
+			width: '70px',
 		});
 
 		day.rowElm.appendChild(cell);
@@ -109,8 +115,8 @@
     }
 
     function createNewTitle (titleText) {
-        // Reference: Original title
-        // <td align="center" valign="middle" bgcolor="#7ba849" rowspan="3"><font size="2" face="Arial" color="white">Edit</font></td>
+		// Title Cell Reference:
+		// <td align="center" valign="middle" bgcolor="#7ba849" rowspan="3"><font size="2" face="Arial" color="white">Total Hours</font></td>
         var title = createElm('td');
 
         title.setAttribute('align', 'center');
@@ -122,19 +128,12 @@
         return title;
     }
 
-	function setDiffCellValue (day, value) {
+	function setDiffCellValue (rowCells, value) {
 		// last cell
-		var cell = day.rowCells[day.rowCells.length - 1];
-		/*
-			Casts the diff number into a string.
-			Adds '+' sign for positive numbers.
-			Negative numbers natively contain a minus sign.
-		*/
-		var valueStr = value > 0 ? '+'+value : value;
+		var cell = rowCells[rowCells.length - 1];
 
-		cell.innerHTML = valueStr + ' &nbsp;';
-
-		return cell;
+		cell.style.color = value > 0 ? 'green' : value < 0 ? 'red' : 'black';
+		cell.innerHTML = value + ' &nbsp;';
 	}
 
     function setStyle (elm, style) {
@@ -268,13 +267,16 @@
 
 	function changeDOM (day) {
         if (isFirstRun) {
+			doc.body.style.fontFamily = 'arial';
+			tableElm.style.borderSpacing = '0';
+
 			appendDiffCell(day);
 
             if (day.isRestDay) {
-                colorizeRow(day, REST_BG_COLOR, REST_FG_COLOR);
+                colorizeRow(day, '#cecece', '#544343');
             }
             else if (day.isFutureDate) {
-                colorizeRow(day, FUTURE_BG_COLOR, FUTURE_FG_COLOR);
+                colorizeRow(day, '#bdbdbd', '#796363');
             }
         }
 
@@ -282,7 +284,7 @@
 
 		// Calculate time diff
 		var currentDiff = day.actualWorkMinutes - day.expectedMinutes;
-		setDiffCellValue(day, currentDiff);
+		setDiffCellValue(day.rowCells, currentDiff);
 
 		// Sum up
 		totalDiff += currentDiff;
@@ -323,6 +325,7 @@
 		setStyle(footer, {
 			fontSize: '85%',
 			color: 'white',
+			letterSpacing: '0.5px',
 		});
 
 		setStyle(popup, {
@@ -333,7 +336,6 @@
 			left: '38%',
 			backgroundColor: '#403434',
 			color: '#e4d9d9',
-			fontFamily: 'arial',
 			padding: '1em 2em',
 			borderRadius: '10px',
 			display: 'flex',
@@ -354,5 +356,4 @@
 
 		popup.addEventListener('click', dismissPopup);
 	}
-
 })(window, document);
