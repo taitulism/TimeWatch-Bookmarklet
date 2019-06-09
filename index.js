@@ -50,9 +50,9 @@
     var totalExpected = 0;
     var totalWork = 0;
     var totalDiff = 0;
-    
+
     var dayObjs = dataRows.map(collectRawData).map(parseRawData);
-    
+
     dayObjs.forEach(function (day) {
         var diffCell;
 
@@ -75,7 +75,7 @@
         if (day.isRestDay || day.isFutureDate) return;
         // sickness/vacation (whole day)
         if ((day.hasSickness || day.hasDayOff) && !day.hasHalfDay) return;
-        
+
         // Calculate Diff in minutes
         var dailyTimeDiff = day.actualWorkMinutes ? day.actualWorkMinutes - day.expectedMinutes : 0;
         totalDiff += dailyTimeDiff;
@@ -84,9 +84,9 @@
 
         setCellValue(day.rowCells[day.rowCells.length - 1], dailyTimeDiff);
     });
-    
+
     // --------------------------------------------------------------
-    
+
     var titleText = totalDiff < 0 ? 'Missing Time' : totalDiff > 0 ? 'Extra Time': 'No Time Diff :)';
     var sign = totalDiff < 0 ? '-' : '+';
     var diffTime = totalDiff < 0 ? (totalDiff * -1) : totalDiff;
@@ -156,14 +156,14 @@
     function padWithZero (num) {
         if (num < 10)
             return '0' + num;
-        return String(num);        
+        return String(num);
     }
 
     function createNewTitle (titleText) {
         // Reference: Original title
         // <td align="center" valign="middle" bgcolor="#7ba849" rowspan="3"><font size="2" face="Arial" color="white">Edit</font></td>
         var title = createElm('td');
-        
+
         title.setAttribute('align', 'center');
         title.setAttribute('valign', 'middle');
         title.setAttribute('bgcolor', '#7ba849');
@@ -177,13 +177,13 @@
         // For Reference: Original cell looks like:
         // <td bgcolor="#e0e0e0"><font size="2" face="Arial">&nbsp;9:08</font></td>
         var cell = createElm('td');
-        
+
         cell.setAttribute('bgcolor', '#e0e0e0');
         cell.style.textAlign = 'right';
 
         return cell;
     }
-    
+
     function setCellValue (cell, value) {
         /**
          * Casts the diff number into a string.
@@ -191,10 +191,10 @@
          * Minus sign is built in.
          */
         var valueStr = value > 0 ? '+' + value: value;
-    
+
         cell.innerHTML = valueStr + ' &nbsp;';
-    
-        return cell;        
+
+        return cell;
     }
 
     function setStyle (elm, style) {
@@ -232,8 +232,8 @@
             dayNumber: parseInt(dateSplit[0], 10),
             month: parseInt(dateSplit[1], 10),
             year: parseInt(dateSplit[2], 10),
-        };        
-        
+        };
+
         return [dayName, dateObj];
     }
 
@@ -307,7 +307,7 @@
         var hasHalfDay  = absence.includes(HALF)     || remark.includes(HALF);
         var hasSickness = absence.includes(SICKNESS) || remark.includes(SICKNESS);
         var hasDayOff   = absence.includes(DAY_OFF)  || remark.includes(DAY_OFF);
-        
+
         day.hasHalfDay = hasHalfDay;
         day.hasSickness = hasSickness;
         day.hasDayOff = hasDayOff;
