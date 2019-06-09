@@ -110,7 +110,7 @@
         alert('No Time Diff! :)'/*  + credit */);
         return;
     }
-    
+
     var titleText = totalDiff < 0 ? 'Missing Time' : 'Extra Time';
     var sign = totalDiff < 0 ? '-' : '+';
     var diffTime = totalDiff < 0 ? (totalDiff * -1) : totalDiff;
