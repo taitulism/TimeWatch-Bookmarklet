@@ -16,7 +16,8 @@
     var REST_FG_COLOR = '#544343';
     var FUTURE_BG_COLOR = '#bdbdbd';
     var FUTURE_FG_COLOR = '#796363';
-    var today = new Date();
+	var today = new Date();
+	var popup;
 
     var tableElm = doc.querySelectorAll('table table')[4];
     var allTableRows = Array.from(tableElm.querySelectorAll('tr')); // includes table headers
@@ -39,119 +40,65 @@
     */
     var punchOffset = thirdHeader.children.length - 1;
 
-    var isFirstRun = win.isNice;
+    var isFirstRun = !win.isNice;
 
-    if (!isFirstRun) {
-        var title = createNewTitle('Time Diff');
-        firstHeader.appendChild(title);
+    if (isFirstRun) {
+		appendColumnTitle();
         win.isNice = true;
-    }
+	}
 
-    var totalExpected = 0;
-    var totalWork = 0;
     var totalDiff = 0;
 
-    var dayObjs = dataRows.map(collectRawData).map(parseRawData);
+	dataRows
+		.map(collectRawData)
+		.map(parseRawData)
+		.forEach(changeDOM)
+	;
 
-    dayObjs.forEach(function (day) {
-        var diffCell;
+	showPopup();
 
-        if (!isFirstRun) {
-            // Add custom column
-            diffCell = createNewCell();
-            day.rowElm.appendChild(diffCell);
-            day.rowCells.push(diffCell);
+	// --------------------------------------------------------------
+	// 	Functions
+	// --------------------------------------------------------------
 
-            // Colorize rest days & future days
-            if (day.isRestDay) {
-                colorizeRow(day, REST_BG_COLOR, REST_FG_COLOR);
-            }
-            else if (day.isFutureDate) {
-                colorizeRow(day, FUTURE_BG_COLOR, FUTURE_FG_COLOR);
-            }
-        }
+    function createElm (tag) {
+        tag = tag || 'div';
 
-        // Return if day should NOT be calculated
-        if (day.isRestDay || day.isFutureDate) return;
-        // sickness/vacation (whole day)
-        if ((day.hasSickness || day.hasDayOff) && !day.hasHalfDay) return;
+        return doc.createElement(tag);
+	}
 
-        // Calculate Diff in minutes
-        var dailyTimeDiff = day.actualWorkMinutes ? day.actualWorkMinutes - day.expectedMinutes : 0;
-        totalDiff += dailyTimeDiff;
-        totalExpected += day.expectedMinutes;
-        totalWork += day.actualWorkMinutes;
+	function appendColumnTitle () {
+		var title = createNewTitle('Time Diff');
+        firstHeader.appendChild(title);
+	}
 
-        setCellValue(day.rowCells[day.rowCells.length - 1], dailyTimeDiff);
-    });
+	function appendDiffCell (day) {
+		// For Reference: Original cell looks like:
+        // <td bgcolor="#e0e0e0"><font size="2" face="Arial">&nbsp;9:08</font></td>
+        var cell = createElm('td');
 
-    // --------------------------------------------------------------
+		setStyle(cell, {
+			backgroundColor: '#e0e0e0',
+			textAlign: 'right',
+		});
 
-    var titleText = totalDiff < 0 ? 'Missing Time' : totalDiff > 0 ? 'Extra Time': 'No Time Diff :)';
-    var sign = totalDiff < 0 ? '-' : '+';
-    var diffTime = totalDiff < 0 ? (totalDiff * -1) : totalDiff;
-    var hoursDiff = padWithZero(Math.floor(diffTime / 60));
-    var minsDiff = padWithZero(diffTime % 60);
-    var link = 'https://github.com/taitulism/TimeWatch-Bookmarklet';
-    var repoLink = '<a href="'+link+'" style="color:white;">'+link+'</a>';
+		day.rowElm.appendChild(cell);
+		day.rowCells.push(cell);
+	}
 
-    // Create Popup
-    var div = createElm();
-    var header = createElm();
-    var body = createElm();
-    var footer = createElm();
-
-    header.innerHTML = titleText;
-    body.innerHTML = sign + hoursDiff + ':' + minsDiff;
-    footer.innerHTML = repoLink;
-
-    setStyle(header, {
-        backgroundColor: (sign === '+') ? '#5b921d' : 'red',
-        color: 'white',
-        textAlign: 'center',
-        padding: '1em',
-    });
-
-    setStyle(body, {
-        textAlign: 'center',
-        fontSize: '140%',
-    });
-
-    setStyle(footer, {
-        fontSize: '85%',
-        color: 'white',
-    });
-
-    setStyle(div, {
-        width: '400px',
-        height: '200px',
-        position: 'fixed',
-        top: '150px',
-        left: '38%',
-        backgroundColor: '#403434',
-        color: '#e4d9d9',
-        fontFamily: 'arial',
-        padding: '1em 2em',
-        borderRadius: '10px',
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'space-around',
-        cursor: 'pointer',
-    });
-
-    div.appendChild(header);
-    div.appendChild(body);
-    div.appendChild(footer);
-    doc.body.appendChild(div);
-
-    div.addEventListener('click', removeDiv);
-
-    // --------------------------------------------------------------
-
-    function removeDiv() {
-        div.removeEventListener('click', removeDiv);
-        div.parentNode.removeChild(div);
-    }
+	/*
+		A day should be ignored when:
+		1. Sickness/Vacation (only if whole day)
+		2. Rest day (e.g. Fri, Sat)
+		3. Future date
+	*/
+	function shouldBeIgnored (day) {
+		if (
+			(day.hasSickness || day.hasDayOff) && !day.hasHalfDay
+			|| day.isRestDay
+			|| day.isFutureDate
+		) return;
+	}
 
     function padWithZero (num) {
         if (num < 10)
@@ -173,29 +120,20 @@
         return title;
     }
 
-    function createNewCell () {
-        // For Reference: Original cell looks like:
-        // <td bgcolor="#e0e0e0"><font size="2" face="Arial">&nbsp;9:08</font></td>
-        var cell = createElm('td');
+	function setDiffCellValue (day, value) {
+		// last cell
+		var cell = day.rowCells[day.rowCells.length - 1];
+		/*
+			Casts the diff number into a string.
+			Adds '+' sign for positive numbers.
+			Negative numbers natively contain a minus sign.
+		*/
+		var valueStr = value > 0 ? '+'+value : value;
 
-        cell.setAttribute('bgcolor', '#e0e0e0');
-        cell.style.textAlign = 'right';
+		cell.innerHTML = valueStr + ' &nbsp;';
 
-        return cell;
-    }
-
-    function setCellValue (cell, value) {
-        /**
-         * Casts the diff number into a string.
-         * Adds '+' sign for positive numbers.
-         * Minus sign is built in.
-         */
-        var valueStr = value > 0 ? '+' + value: value;
-
-        cell.innerHTML = valueStr + ' &nbsp;';
-
-        return cell;
-    }
+		return cell;
+	}
 
     function setStyle (elm, style) {
         for (var key in style) {
@@ -324,11 +262,96 @@
         day.actualWorkMinutes = getTotalMinutes(totalHours);
 
         return day;
-    }
+	}
 
-    function createElm (tag) {
-        tag = tag || 'div';
+	function changeDOM (day) {
+        if (isFirstRun) {
+			appendDiffCell(day);
 
-        return doc.createElement(tag);
-    }
+            if (day.isRestDay) {
+                colorizeRow(day, REST_BG_COLOR, REST_FG_COLOR);
+            }
+            else if (day.isFutureDate) {
+                colorizeRow(day, FUTURE_BG_COLOR, FUTURE_FG_COLOR);
+            }
+        }
+
+		if (shouldBeIgnored(day)) return;
+
+        // Calculate time diff in minutes
+		var currentDiff = day.actualWorkMinutes ? day.actualWorkMinutes - day.expectedMinutes : 0;
+
+		setDiffCellValue(day, currentDiff);
+
+		// Sum up
+        totalDiff += currentDiff;
+	}
+
+	function showPopup () {
+		var titleText = totalDiff < 0 ? 'Missing Time' : totalDiff > 0 ? 'Extra Time': 'No Time Diff :)';
+		var sign = totalDiff < 0 ? '-' : '+';
+		var absDiff = Math.abs(totalDiff);
+		var hoursDiff = padWithZero(Math.floor(absDiff / 60));
+		var minsDiff = padWithZero(absDiff % 60);
+		var link = 'https://github.com/taitulism/TimeWatch-Bookmarklet';
+		var repoLink = '<a href="'+link+'" style="color:white;">'+link+'</a>';
+
+		// Create elements
+		popup = createElm();
+		var header = createElm();
+		var body = createElm();
+		var footer = createElm();
+
+		header.innerHTML = titleText;
+		body.innerHTML = sign + hoursDiff + ':' + minsDiff;
+		footer.innerHTML = repoLink;
+
+		// Style
+		setStyle(header, {
+			backgroundColor: (sign === '+') ? '#5b921d' : 'red',
+			color: 'white',
+			textAlign: 'center',
+			padding: '1em',
+		});
+
+		setStyle(body, {
+			textAlign: 'center',
+			fontSize: '140%',
+		});
+
+		setStyle(footer, {
+			fontSize: '85%',
+			color: 'white',
+		});
+
+		setStyle(popup, {
+			width: '400px',
+			height: '200px',
+			position: 'fixed',
+			top: '150px',
+			left: '38%',
+			backgroundColor: '#403434',
+			color: '#e4d9d9',
+			fontFamily: 'arial',
+			padding: '1em 2em',
+			borderRadius: '10px',
+			display: 'flex',
+			flexDirection: 'column',
+			justifyContent: 'space-around',
+			cursor: 'pointer',
+		});
+
+		popup.appendChild(header);
+		popup.appendChild(body);
+		popup.appendChild(footer);
+		doc.body.appendChild(popup);
+
+		function dismissPopup() {
+			popup.removeEventListener('click', dismissPopup);
+			popup.parentNode.removeChild(popup);
+		}
+
+		popup.addEventListener('click', dismissPopup);
+	}
+
 })(window, document);
