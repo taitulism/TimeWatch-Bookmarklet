@@ -268,7 +268,12 @@
 
 	function changeDOM (day) {
         if (isFirstRun) {
-			doc.body.style.fontFamily = 'arial';
+			setStyle(doc.body,  {
+				fontFamily: 'arial',
+				margin: '0 auto',
+				maxWidth: '1100px',
+			});
+
 			tableElm.style.borderSpacing = '0';
 
 			// Align titles
