@@ -4,18 +4,18 @@ TimeWatch Bookmarklet
 =====================
 A timewatch.co.il helper tool to calculate monthly working hours.
 
-What is a "Bookmarklet"?
+What is a Bookmarklet?
 ------------------------
-A bookmarklet is like a regular browser bookmark (a favorite link) but instead of a website address it has javascript code that runs on the current page when clicked.
+A bookmarklet is like a regular browser bookmark (a favorite link). It has a title you click on and a URL. The difference is that instead of a website address it holds javascript code. When clicked it runs the code on the current page.
 
 
 "Installation"
 --------------
-1. Create a new Bookmark (`ctrl+D`).  
-    *(You can bookmark this page for example and then edit it)*
-2. Edit the new bookmark (right click).
-3. **Name**: TimeWatch  
-    **URL**: Copy the contents of [`bookmarklet.txt`](https://raw.githubusercontent.com/taitulism/TimeWatch-Bookmarklet/master/bookmarklet.txt).
+1. Create a new Bookmark and set the Name & URL fields to:  
+* **Name**: TimeWatch  
+* **URL**: Copy the contents of [`bookmarklet.txt`](https://raw.githubusercontent.com/taitulism/TimeWatch-Bookmarklet/master/bookmarklet.txt).
+
+>*You can bookmark this page (`ctrl+D`) and then edit it with a right-click*
 
 
 Usage

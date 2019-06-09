@@ -88,16 +88,18 @@
 
 	/*
 		A day should be ignored when:
-		1. Sickness/Vacation (only if whole day)
+		1. Sickness/Vacation (only if a whole day)
 		2. Rest day (e.g. Fri, Sat)
 		3. Future date
+		4. No actual working hours
 	*/
 	function shouldBeIgnored (day) {
-		if (
+		return (
 			(day.hasSickness || day.hasDayOff) && !day.hasHalfDay
 			|| day.isRestDay
 			|| day.isFutureDate
-		) return;
+			|| !day.actualWorkMinutes
+		);
 	}
 
     function padWithZero (num) {
@@ -278,13 +280,12 @@
 
 		if (shouldBeIgnored(day)) return;
 
-        // Calculate time diff in minutes
-		var currentDiff = day.actualWorkMinutes ? day.actualWorkMinutes - day.expectedMinutes : 0;
-
+		// Calculate time diff
+		var currentDiff = day.actualWorkMinutes - day.expectedMinutes;
 		setDiffCellValue(day, currentDiff);
 
 		// Sum up
-        totalDiff += currentDiff;
+		totalDiff += currentDiff;
 	}
 
 	function showPopup () {
