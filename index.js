@@ -18,7 +18,7 @@
     var SICKNESS = 'מחלה';
     var DAY_OFF = 'חופש';
 
-    var REST_BG_COLOR = '#bbb';
+    var REST_BG_COLOR = '#cecece';
     var REST_FG_COLOR = '#544343';
     var FUTURE_BG_COLOR = '#bdbdbd';
     var FUTURE_FG_COLOR = '#796363';
@@ -73,14 +73,13 @@
 
     
     dayObjs.forEach(function (day) {
-        var cell;
+        var diffCell;
 
-        // Add custom column
         if (!isLoaded) {
-            cell = createNewCell();
-            
-            day.rowElm.appendChild(cell);
-            day.rowCells.push(cell);
+            // Add custom column
+            diffCell = createNewCell();
+            day.rowElm.appendChild(diffCell);
+            day.rowCells.push(diffCell);
         }
 
         // Colorize rest & future days
@@ -97,12 +96,13 @@
         if ((day.hasSickness || day.hasDayOff) && !day.hasHalfDay) return;
 
         // Calculate Diff in minutes
+        // debugger
         var dailyTimeDiff = day.actualWorkMinutes ? day.actualWorkMinutes - day.expectedMinutes : 0;
         totalDiff += dailyTimeDiff;
         totalExpected += day.expectedMinutes;
         totalWork += day.actualWorkMinutes;
 
-        setCellValue(cell, dailyTimeDiff);
+        setCellValue(day.rowCells[day.rowCells.length - 1], dailyTimeDiff);
     });
     
     // --------------------------------------------------------------
@@ -200,12 +200,13 @@
         return title;
     }
 
-    function createNewCell (timeDiff) {
+    function createNewCell () {
         // For Reference: Original cell looks like:
         // <td bgcolor="#e0e0e0"><font size="2" face="Arial">&nbsp;9:08</font></td>
         var cell = document.createElement('td');
         
         cell.setAttribute('bgcolor', '#e0e0e0');
+        cell.style.textAlign = 'right';
 
         return cell;
     }
@@ -218,7 +219,7 @@
          */
         var valueStr = value > 0 ? '+' + value: value;
     
-        cell.innerHTML = ' &nbsp (' + valueStr + ')';
+        cell.innerHTML = valueStr + ' &nbsp;';
     
         return cell;        
     }
@@ -229,7 +230,7 @@
         }
     }
 
-     function getTotalMinutes (timeString) {
+    function getTotalMinutes (timeString) {
         if (!timeString) return 0;
 
         var split = timeString.split(':').map(function (str) {
@@ -262,8 +263,6 @@
         
         return [dayName, dateObj];
     }
-    
-    
 
     function isFutureDate (dateObj) {
         var date = new Date();
