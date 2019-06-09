@@ -268,7 +268,6 @@
 	function changeDOM (day) {
         if (isFirstRun) {
 			doc.body.style.fontFamily = 'arial';
-			tableElm.style.borderSpacing = '0';
 
 			appendDiffCell(day);
 
