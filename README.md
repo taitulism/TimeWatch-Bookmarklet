@@ -1,3 +1,5 @@
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+
 TimeWatch Bookmarklet
 =====================
 A timewatch.co.il helper tool to calculate monthly working hours.
