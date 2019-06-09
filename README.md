@@ -39,7 +39,7 @@ This script works only in the "Update punch data" page.
 
 
 
-Creating you own bookmarklets?
+Creating your own bookmarklets?
 ------------------------------
 I recommend this tool: [https://chriszarate.github.io/bookmarkleter](https://chriszarate.github.io/bookmarkleter)
 * It wraps your code with an [iife](https://developer.mozilla.org/en-US/docs/Glossary/IIFE)
