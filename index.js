@@ -1,39 +1,30 @@
-(function () {
+(function (win, doc) {
 
     // Redirect from anywhere (the bookmarklet is also a regular bookmark)
-    if (window.location.hostname !== 'checkin.timewatch.co.il') {
-        window.location.href = 'https://checkin.timewatch.co.il';
+    if (win.location.hostname !== 'checkin.timewatch.co.il') {
+        win.location.href = 'https://checkin.timewatch.co.il';
         return;
     }
 
-    var DEFAULT_EXPECTED_HOURS_PER_DAY = '9:00';
     var HALF = 'חצי';
-    var WORK_DAY = 'עבודה';
     var REST_DAY = 'מנוחה';
     var DAY = 'day';
-    var HEBREW_SUNDAY = 'יום א\'';
-    var FRIDAY = 'Fri';
-    var SATURDAY = 'Sat';
     var MISSING = 'Missing';
     var SICKNESS = 'מחלה';
     var DAY_OFF = 'חופש';
-
     var REST_BG_COLOR = '#cecece';
     var REST_FG_COLOR = '#544343';
     var FUTURE_BG_COLOR = '#bdbdbd';
     var FUTURE_FG_COLOR = '#796363';
+    var today = new Date();
 
-    var TODAY = new Date();
-
-    var tableElm = document.querySelectorAll('table table')[4];
+    var tableElm = doc.querySelectorAll('table table')[4];
     var allTableRows = Array.from(tableElm.querySelectorAll('tr')); // includes table headers
 
     // Headers (first three rows)
     var firstHeader = allTableRows[0];
     var thirdHeader = allTableRows[2];
 
-    var titles = Array.from(firstHeader.children);
-    
     // Data Rows
     var dataRows = allTableRows.slice(3);
 
@@ -48,55 +39,44 @@
     */
     var punchOffset = thirdHeader.children.length - 1;
 
-    var CUSTOM_TITLE_TEXT = 'Time Diff';
+    var isFirstRun = win.isNice;
 
-    var isLoaded = firstHeader.lastChild.textContent === CUSTOM_TITLE_TEXT;
-
-    if (!isLoaded) {
-        var title = createNewTitle(CUSTOM_TITLE_TEXT);
-        
+    if (!isFirstRun) {
+        var title = createNewTitle('Time Diff');
         firstHeader.appendChild(title);
+        win.isNice = true;
     }
 
-    function isWorkDay (day) {
-        if (day.isRestDay || day.isXday) return false;
-        if (day.name === FRIDAY || day.name === SATURDAY) return false;
-            
-        day.type === HEBREW_SUNDAY || day.type.includes(WORK_DAY) && day.rawStdHours;
-        return 
-    }
-
-    var dayObjs = dataRows.map(collectRawData).map(parseRawData);
     var totalExpected = 0;
     var totalWork = 0;
     var totalDiff = 0;
-
+    
+    var dayObjs = dataRows.map(collectRawData).map(parseRawData);
     
     dayObjs.forEach(function (day) {
         var diffCell;
 
-        if (!isLoaded) {
+        if (!isFirstRun) {
             // Add custom column
             diffCell = createNewCell();
             day.rowElm.appendChild(diffCell);
             day.rowCells.push(diffCell);
+
+            // Colorize rest days & future days
+            if (day.isRestDay) {
+                colorizeRow(day, REST_BG_COLOR, REST_FG_COLOR);
+            }
+            else if (day.isFutureDate) {
+                colorizeRow(day, FUTURE_BG_COLOR, FUTURE_FG_COLOR);
+            }
         }
 
-        // Colorize rest & future days
-        if (day.isRestDay) {
-            colorizeRow(day, REST_BG_COLOR, REST_FG_COLOR);
-            return;
-        }
-        else if (day.isFutureDate) {
-            colorizeRow(day, FUTURE_BG_COLOR, FUTURE_FG_COLOR);
-            return;
-        }
-
+        // Return if day should NOT be calculated
+        if (day.isRestDay || day.isFutureDate) return;
         // sickness/vacation (whole day)
         if ((day.hasSickness || day.hasDayOff) && !day.hasHalfDay) return;
-
+        
         // Calculate Diff in minutes
-        // debugger
         var dailyTimeDiff = day.actualWorkMinutes ? day.actualWorkMinutes - day.expectedMinutes : 0;
         totalDiff += dailyTimeDiff;
         totalExpected += day.expectedMinutes;
@@ -106,12 +86,8 @@
     });
     
     // --------------------------------------------------------------
-    if (totalDiff === 0) {
-        alert('No Time Diff! :)'/*  + credit */);
-        return;
-    }
-
-    var titleText = totalDiff < 0 ? 'Missing Time' : 'Extra Time';
+    
+    var titleText = totalDiff < 0 ? 'Missing Time' : totalDiff > 0 ? 'Extra Time': 'No Time Diff :)';
     var sign = totalDiff < 0 ? '-' : '+';
     var diffTime = totalDiff < 0 ? (totalDiff * -1) : totalDiff;
     var hoursDiff = padWithZero(Math.floor(diffTime / 60));
@@ -120,18 +96,15 @@
     var creditLink = '<a href="'+link+'" style="color:white;">'+link+'</a>';
 
     // Create Popup
-    var div = document.createElement('div');
-    var header = document.createElement('div');
-    var body = document.createElement('div');
-    var footer = document.createElement('div');
+    var div = createElm();
+    var header = createElm();
+    var body = createElm();
+    var footer = createElm();
 
     header.innerHTML = titleText;
     body.innerHTML = sign + hoursDiff + ':' + minsDiff;
     footer.innerHTML = creditLink;
 
-    header.style.backgroundColor = '#5b921d';
-    header.style.color = '#e4d9d9';
-    
     setStyle(header, {
         backgroundColor: (sign === '+') ? '#5b921d' : 'red',
         color: 'white',
@@ -169,7 +142,7 @@
     div.appendChild(header);
     div.appendChild(body);
     div.appendChild(footer);
-    document.body.appendChild(div);
+    doc.body.appendChild(div);
 
     div.addEventListener('click', removeDiv);
 
@@ -189,7 +162,7 @@
     function createNewTitle (titleText) {
         // Reference: Original title
         // <td align="center" valign="middle" bgcolor="#7ba849" rowspan="3"><font size="2" face="Arial" color="white">Edit</font></td>
-        var title = document.createElement('td');
+        var title = createElm('td');
         
         title.setAttribute('align', 'center');
         title.setAttribute('valign', 'middle');
@@ -203,7 +176,7 @@
     function createNewCell () {
         // For Reference: Original cell looks like:
         // <td bgcolor="#e0e0e0"><font size="2" face="Arial">&nbsp;9:08</font></td>
-        var cell = document.createElement('td');
+        var cell = createElm('td');
         
         cell.setAttribute('bgcolor', '#e0e0e0');
         cell.style.textAlign = 'right';
@@ -271,7 +244,7 @@
         date.setMonth(dateObj.month - 1);
         date.setDate(dateObj.dayNumber - 1);
 
-        return date.getTime() > TODAY.getTime();
+        return date.getTime() > today.getTime();
     }
 
     function getExpectedMinutes (stdHours, isHalfDayOff) {
@@ -352,4 +325,10 @@
 
         return day;
     }
-})();
+
+    function createElm (tag) {
+        tag = tag || 'div';
+
+        return doc.createElement(tag);
+    }
+})(window, document);
