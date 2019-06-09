@@ -93,7 +93,7 @@
     var hoursDiff = padWithZero(Math.floor(diffTime / 60));
     var minsDiff = padWithZero(diffTime % 60);
     var link = 'https://github.com/taitulism/TimeWatch-Bookmarklet';
-    var creditLink = '<a href="'+link+'" style="color:white;">'+link+'</a>';
+    var repoLink = '<a href="'+link+'" style="color:white;">'+link+'</a>';
 
     // Create Popup
     var div = createElm();
@@ -103,7 +103,7 @@
 
     header.innerHTML = titleText;
     body.innerHTML = sign + hoursDiff + ':' + minsDiff;
-    footer.innerHTML = creditLink;
+    footer.innerHTML = repoLink;
 
     setStyle(header, {
         backgroundColor: (sign === '+') ? '#5b921d' : 'red',
