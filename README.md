@@ -33,8 +33,10 @@ This script works only in the "Update punch data" page.
 
 ![TimeWatch.co.il's "update punch data" page](https://github.com/taitulism/TimeWatch-Bookmarklet/raw/master/update-punch-data.png "TimeWatch.co.il's 'update punch data' page")
 
+Before:
 ![TimeWatch before the bookmarklet](https://github.com/taitulism/TimeWatch-Bookmarklet/raw/master/before.png "TimeWatch before the bookmarklet")
 
+After:
 ![TimeWatch after the bookmarklet](https://github.com/taitulism/TimeWatch-Bookmarklet/raw/master/after.png "TimeWatch after the bookmarklet")
 
 
