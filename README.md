@@ -11,8 +11,8 @@ A bookmarklet is like a regular browser bookmark (a favorite link). It has a tit
 
 "Installation"
 --------------
-1. Create a new Bookmark and set the Name & URL fields to:  
-* **Name**: TimeWatch  
+1. Create a new Bookmark and set the Name & URL fields to:
+* **Name**: "TimeWatch" (or whatever)
 * **URL**: Copy the contents of [`bookmarklet.txt`](https://raw.githubusercontent.com/taitulism/TimeWatch-Bookmarklet/master/bookmarklet.txt).
 
 >*You can bookmark this page (`ctrl+D`) and then edit it with a right-click*
