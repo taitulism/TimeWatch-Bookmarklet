@@ -40,6 +40,22 @@
 
     if (isFirstRun) {
 		appendColumnTitle();
+
+		// General styles
+		setStyle(doc.body,  {
+			fontFamily: 'arial',
+			margin: '0 auto',
+			maxWidth: '1100px',
+		});
+
+		tableElm.style.borderSpacing = '0';
+
+		// Align titles
+		Array.from(firstHeader.children).concat(Array.from(thirdHeader.children)).forEach(function (title){
+			title.setAttribute('align', 'left');
+		});
+
+		// Set `isLoaded` flag
         win.isNice = true;
 	}
 
@@ -267,19 +283,6 @@
 
 	function changeDOM (day) {
         if (isFirstRun) {
-			setStyle(doc.body,  {
-				fontFamily: 'arial',
-				margin: '0 auto',
-				maxWidth: '1100px',
-			});
-
-			tableElm.style.borderSpacing = '0';
-
-			// Align titles
-			Array.from(firstHeader.children).concat(Array.from(thirdHeader.children)).forEach(function (title){
-				title.setAttribute('align', 'left');
-			});
-
 			appendDiffCell(day);
 
             if (day.isRestDay) {
