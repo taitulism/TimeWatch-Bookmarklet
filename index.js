@@ -12,6 +12,9 @@
     var MISSING = 'Missing';
     var SICKNESS = 'מחלה';
     var DAY_OFF = 'חופש';
+	var DEFAULT_STD_HOURS = '9:00';
+	var useStdHours = localStorage.getItem('TWBM.useStdHours') || false;
+	var customStdHours = localStorage.getItem('TWBM.stdHours');
 	var today = new Date();
 	var popup;
 
@@ -221,7 +224,7 @@
         var rowCells = Array.from(rowElm.children);
         var cellsData = rowCells.map(function (cell) {return getContent(cell)})
 
-        return {
+		return {
             rowElm: rowElm,
             rowCells: rowCells,
             cellsData: cellsData,
@@ -229,13 +232,20 @@
                 'Date': cellsData[0],
                 'DayType': cellsData[1],
                 'DayName': cellsData[2],
-                'StdHours': cellsData[3],
+                'StdHoursCell': cellsData[3],
+                'StdHours': resolveStdHours(cellsData[3]),
                 'Absence': cellsData[5 + punchOffset],
                 'Remark': cellsData[6 + punchOffset],
                 'TotalHours': cellsData[7 + punchOffset],
             }
         };
-    }
+	}
+
+	function resolveStdHours (cellStr) {
+		return useStdHours
+			? customStdHours || cellStr
+			: DEFAULT_STD_HOURS;
+	}
 
     function parseRawData (rawRowObj) {
         var day = rawRowObj;
@@ -267,10 +277,11 @@
         day.hasSickness = hasSickness;
         day.hasDayOff = hasDayOff;
 
+        var stdHoursCell = rawColumn.stdHoursCell;
         var stdHours = rawColumn.StdHours;
         var totalHours = rawColumn.TotalHours;
 
-        day.isRestDay    = day.type.includes(REST_DAY) && !stdHours;
+        day.isRestDay    = day.type.includes(REST_DAY) && !stdHoursCell;
         day.isMissing    = totalHours.toLowerCase().includes(MISSING);
         day.isXday       = day.type.toLowerCase().includes(DAY) || day.title.toLowerCase().includes(DAY);
         day.isHalfSick   = hasHalfDay && hasSickness;
