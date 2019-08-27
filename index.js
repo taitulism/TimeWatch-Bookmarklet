@@ -1,10 +1,18 @@
 (function (win, doc) {
-
     // Redirect from anywhere (the bookmarklet is also a regular bookmark)
     if (win.location.hostname !== 'checkin.timewatch.co.il') {
         win.location.href = 'https://checkin.timewatch.co.il';
         return;
-    }
+	}
+
+	// Homepage, after login
+	if (window.location.pathname === '/punch/punch2_e.php') {
+		// Goto "Update punch data" page
+		var links = Array.from(document.querySelectorAll('a'))
+		var updatePunchDataLink = links.find((l) => l.getAttribute('href').startsWith('/punch/editwh.php?'));
+
+		if (updatePunchDataLink) return updatePunchDataLink.click();
+	}
 
     var HALF = 'חצי';
     var REST_DAY = 'מנוחה';
